@@ -17,14 +17,26 @@ export const userDescription: INodeProperties[] = [
 		},
 		options: [
 			{
-				name: 'Get Many',
-				value: 'getAll',
-				action: 'Get users',
-				description: 'Get many users',
+				name: 'Create',
+				value: 'create',
+				action: 'Create a new user',
+				description: 'Create a new user',
+				routing: {
+					request: {
+						method: 'POST',
+						url: '/users',
+					},
+				},
+			},
+			{
+				name: 'Credit',
+				value: 'credit',
+				action: 'Get credit balance',
+				description: 'Get your current credit balance and usage',
 				routing: {
 					request: {
 						method: 'GET',
-						url: '/users',
+						url: 'https://api.avalai.ir/user/v1/credit',
 					},
 				},
 			},
@@ -41,14 +53,38 @@ export const userDescription: INodeProperties[] = [
 				},
 			},
 			{
-				name: 'Create',
-				value: 'create',
-				action: 'Create a new user',
-				description: 'Create a new user',
+				name: 'Get Many',
+				value: 'getAll',
+				action: 'Get users',
+				description: 'Get many users',
+				routing: {
+					request: {
+						method: 'GET',
+						url: '/users',
+					},
+				},
+			},
+			{
+				name: 'Lookup Transaction',
+				value: 'lookup',
+				action: 'Lookup transaction',
+				description: 'Lookup specific transactions by their IDs',
 				routing: {
 					request: {
 						method: 'POST',
-						url: '/users',
+						url: 'https://api.avalai.ir/user/v1/transactions/lookup',
+					},
+				},
+			},
+			{
+				name: 'Transactions',
+				value: 'transactions',
+				action: 'List transactions',
+				description: 'Get a list of your API transactions',
+				routing: {
+					request: {
+						method: 'GET',
+						url: 'https://api.avalai.ir/user/v1/transactions',
 					},
 				},
 			},
