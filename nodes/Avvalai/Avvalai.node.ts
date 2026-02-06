@@ -9,6 +9,13 @@ import { audioDescription } from './resources/audio';
 import { ocrDescription } from './resources/ocr';
 import { rerankDescription } from './resources/rerank';
 import { searchDescription } from './resources/search';
+import { videosDescription } from './resources/videos';
+import { moderationDescription } from './resources/moderation';
+import { filesDescription } from './resources/files';
+import { messagesDescription } from './resources/messages';
+import { fineTuningDescription } from './resources/fine-tuning';
+import { batchDescription } from './resources/batch';
+import { assistantsDescription } from './resources/assistants';
 
 export class Avvalai implements INodeType {
 	description: INodeTypeDescription = {
@@ -41,8 +48,16 @@ export class Avvalai implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
+						name: 'Assistant',
+						value: 'assistants',
+					},
+					{
 						name: 'Audio',
 						value: 'audio',
+					},
+					{
+						name: 'Batch',
+						value: 'batch',
 					},
 					{
 						name: 'Chat',
@@ -57,12 +72,28 @@ export class Avvalai implements INodeType {
 						value: 'embeddings',
 					},
 					{
+						name: 'File',
+						value: 'files',
+					},
+					{
+						name: 'Fine-Tuning',
+						value: 'fine-tuning',
+					},
+					{
 						name: 'Image',
 						value: 'images',
 					},
 					{
+						name: 'Message',
+						value: 'messages',
+					},
+					{
 						name: 'Model',
 						value: 'model',
+					},
+					{
+						name: 'Moderation',
+						value: 'moderation',
 					},
 					{
 						name: 'OCR',
@@ -80,6 +111,10 @@ export class Avvalai implements INodeType {
 						name: 'User',
 						value: 'user',
 					},
+					{
+						name: 'Video',
+						value: 'videos',
+					},
 				],
 				default: 'user',
 			},
@@ -93,6 +128,13 @@ export class Avvalai implements INodeType {
 			...ocrDescription,
 			...rerankDescription,
 			...searchDescription,
+			...videosDescription,
+			...moderationDescription,
+			...filesDescription,
+			...messagesDescription,
+			...fineTuningDescription,
+			...batchDescription,
+			...assistantsDescription,
 		],
 	};
 }
