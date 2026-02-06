@@ -3,12 +3,14 @@ import type {
 	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
+	Icon,
 } from 'n8n-workflow';
 
 export class AvvalaiApi implements ICredentialType {
 	name = 'avvalaiApi';
 
 	displayName = 'Avvalai API';
+	icon = 'file:avvalai.svg' as Icon;
 
 	// Link to your community node's README
 	documentationUrl = 'https://github.com/org/-avvalai?tab=readme-ov-file#credentials';
