@@ -6,7 +6,7 @@ export class Avvalai implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Avvalai',
 		name: 'avvalai',
-		icon: { light: 'file:avvalai.svg', dark: 'file:avvalai.dark.svg' },
+		icon: 'file:avvalai.svg',
 		group: ['transform'],
 		version: 1,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
