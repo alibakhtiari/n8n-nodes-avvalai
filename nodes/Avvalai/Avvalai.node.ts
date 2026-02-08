@@ -56,22 +56,158 @@ export class Avvalai implements INodeType {
 
 	methods = {
 		loadOptions: {
-			async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+			async getProviders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const returnData: INodePropertyOptions[] = [];
 				const models = await this.helpers.requestWithAuthentication.call(this, 'avvalaiApi', {
 					method: 'GET',
 					url: 'https://api.avalai.ir/v1/models',
 				});
 
+				// Handle string response
+				let responseData = models;
+				if (typeof models === 'string') {
+					try {
+						responseData = JSON.parse(models);
+					} catch (e) {
+						// Ignore parse error
+					}
+				}
+
 				// Handle different response structures
 				let modelList: any[] = [];
-				if (Array.isArray(models)) {
-					modelList = models;
-				} else if (models && Array.isArray(models.data)) {
-					modelList = models.data;
+				if (Array.isArray(responseData)) {
+					modelList = responseData;
+				} else if (responseData && Array.isArray(responseData.data)) {
+					modelList = responseData.data;
+				}
+
+				const providers = new Set<string>();
+				for (const model of modelList) {
+					if (model.owned_by) {
+						providers.add(model.owned_by);
+					}
+				}
+
+				for (const provider of providers) {
+					returnData.push({
+						name: provider,
+						value: provider,
+					});
+				}
+
+				return returnData;
+			},
+			async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+				const returnData: INodePropertyOptions[] = [];
+
+				let resource = 'chat';
+				try {
+					resource = this.getNodeParameter('resource') as string;
+				} catch (e) {
+					// Fallback
+				}
+
+				let provider = '';
+				try {
+					provider = this.getNodeParameter('provider') as string;
+				} catch (e) {
+					// Fallback
+				}
+
+				const models = await this.helpers.requestWithAuthentication.call(this, 'avvalaiApi', {
+					method: 'GET',
+					url: 'https://api.avalai.ir/v1/models',
+				});
+
+				// Handle string response
+				let responseData = models;
+				if (typeof models === 'string') {
+					try {
+						responseData = JSON.parse(models);
+					} catch (e) {
+						// Ignore parse error
+					}
+				}
+
+				// Handle different response structures
+				let modelList: any[] = [];
+				if (Array.isArray(responseData)) {
+					modelList = responseData;
+				} else if (responseData && Array.isArray(responseData.data)) {
+					modelList = responseData.data;
 				}
 
 				for (const model of modelList) {
+					// Filter based on resource
+					if (resource === 'chat') {
+						if (model.mode !== 'chat' && model.mode !== 'responses') {
+							// Check if it's missing mode but has chat-like ID?
+							// Logic in ChatModel is "exclude audio/image", here it's "include chat/responses".
+							// The user complained that Chat resource causes issues too.
+							// Let's adopt the exclusion logic here too for consistency, OR strict inclusion.
+							// Currently strict inclusion: mode MUST be chat or responses.
+							// The user said "works now but it has a chat too , it loads image models still".
+							// This implies strict inclusion FAILED to exclude them.
+							// So they MUST have mode='chat' or 'responses' OR undefined and passing through?
+							// Wait, earlier I saw "mode": "image_generation".
+							// If strict inclusion is active, how did "image_generation" pass `!== 'chat'`?
+							// It shouldn't pass.
+							// Unless model.mode is undefined? then `undefined !== 'chat'` is TRUE.
+							// So we must check if mode exists?
+							if (model.mode && (model.mode === 'chat' || model.mode === 'responses')) {
+								// OK
+							} else {
+								// Skip if mode is present and not chat
+								// But what if mode is missing?
+								// If mode is missing, we should probably exclude it unless ID looks like a chat model?
+								// Or checking ID for "image"?
+								const lowerId = model.id.toLowerCase();
+								if (
+									lowerId.includes('image') ||
+									lowerId.includes('dall-e') ||
+									lowerId.includes('stable-diffusion') ||
+									lowerId.includes('midjourney') ||
+									lowerId.includes('flux') ||
+									lowerId.includes('audio') ||
+									lowerId.includes('video')
+								) {
+									continue;
+								}
+							}
+						}
+
+						// Filter by provider if selected (only for chat resource for now as we only added the field to chat)
+						// But technically getModels runs for both.
+						// If resource is chat, we check provider.
+						if (provider && model.owned_by !== provider) {
+							continue;
+						}
+
+					} else if (resource === 'images') {
+						let operation = 'generations';
+						try {
+							operation = this.getNodeParameter('operation') as string;
+						} catch (e) {
+							// Fallback
+						}
+
+
+						// Filter for image models
+						let isImage = false;
+						if (operation === 'edits') {
+							// Strict filter for edits
+							isImage = (model.id && (model.id.includes('dall-e-2') || model.mode === 'image_edit'));
+						} else {
+							// Default / Generations
+							// Include anything that looks like an image model
+							isImage = (model.id && model.id.includes('dall-e')) || model.mode === 'image' || model.mode === 'image_generation';
+						}
+
+						if (!isImage) {
+							continue;
+						}
+					}
+
 					if (model.id) {
 						returnData.push({
 							name: model.id,

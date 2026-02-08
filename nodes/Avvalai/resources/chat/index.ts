@@ -28,15 +28,32 @@ export const chatDescription: INodeProperties[] = [
         default: 'completion',
     },
     {
+        displayName: 'Provider',
+        name: 'provider',
+        type: 'options',
+        description: 'Filter models by provider',
+        typeOptions: {
+            loadOptionsMethod: 'getProviders',
+        },
+        default: '',
+        displayOptions: {
+            show: {
+                resource: ['chat'],
+                operation: ['completion'],
+            },
+        },
+    },
+    {
         displayName: 'Model Name or ID',
         name: 'model',
         type: 'options',
         description: 'The model which will generate the completion. <a href="https://docs.avalai.ir/en/models/model-details">Check models</a>. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
         typeOptions: {
             loadOptionsMethod: 'getModels',
+            loadOptionsDependsOn: ['provider'],
         },
         required: true,
-        default: 'gpt-4o',
+        default: '',
         displayOptions: {
             show: {
                 resource: ['chat'],

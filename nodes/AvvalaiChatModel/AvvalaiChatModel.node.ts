@@ -35,14 +35,26 @@ export class AvvalaiChatModel implements INodeType {
         ],
         properties: [
             {
+                displayName: 'Provider',
+                name: 'provider',
+                type: 'options',
+                description: 'Filter models by provider',
+                typeOptions: {
+                    loadOptionsMethod: 'getProviders',
+                },
+                default: '',
+            },
+            {
                 displayName: 'Model',
                 name: 'model',
                 type: 'options',
                 description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
                 typeOptions: {
                     loadOptionsMethod: 'getModels',
+                    loadOptionsDependsOn: ['provider'],
                 },
-                default: 'gpt-4o',
+                // default: 'gpt-4o', // Removed default
+                default: '',
                 required: true,
             },
             {
@@ -77,22 +89,121 @@ export class AvvalaiChatModel implements INodeType {
 
     methods = {
         loadOptions: {
-            async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+            async getProviders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
                 const returnData: INodePropertyOptions[] = [];
                 const models = await this.helpers.requestWithAuthentication.call(this, 'avvalaiApi', {
                     method: 'GET',
                     url: 'https://api.avalai.ir/v1/models',
                 });
 
+                // Handle string response
+                let responseData = models;
+                if (typeof models === 'string') {
+                    try {
+                        responseData = JSON.parse(models);
+                    } catch (e) {
+                        // Ignore parse error
+                    }
+                }
+
                 // Handle different response structures
                 let modelList: any[] = [];
-                if (Array.isArray(models)) {
-                    modelList = models;
-                } else if (models && Array.isArray(models.data)) {
-                    modelList = models.data;
+                if (Array.isArray(responseData)) {
+                    modelList = responseData;
+                } else if (responseData && Array.isArray(responseData.data)) {
+                    modelList = responseData.data;
+                }
+
+                const providers = new Set<string>();
+                for (const model of modelList) {
+                    if (model.owned_by) {
+                        providers.add(model.owned_by);
+                    }
+                }
+
+                for (const provider of providers) {
+                    returnData.push({
+                        name: provider,
+                        value: provider,
+                    });
+                }
+
+                return returnData;
+            },
+            async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
+                const returnData: INodePropertyOptions[] = [];
+                let provider = '';
+                try {
+                    provider = this.getNodeParameter('provider') as string;
+                } catch (e) {
+                    // Fallback
+                }
+
+                const models = await this.helpers.requestWithAuthentication.call(this, 'avvalaiApi', {
+                    method: 'GET',
+                    url: 'https://api.avalai.ir/v1/models',
+                });
+
+                // Handle string response
+                let responseData = models;
+                if (typeof models === 'string') {
+                    try {
+                        responseData = JSON.parse(models);
+                    } catch (e) {
+                        // Ignore parse error
+                    }
+                }
+
+                // Handle different response structures
+                let modelList: any[] = [];
+                if (Array.isArray(responseData)) {
+                    modelList = responseData;
+                } else if (responseData && Array.isArray(responseData.data)) {
+                    modelList = responseData.data;
                 }
 
                 for (const model of modelList) {
+
+                    // Filter out known non-chat models
+                    if (model.mode === 'image' || model.mode === 'image_generation' || model.mode === 'audio' || model.mode === 'moderation' || model.mode === 'video_generation') {
+                        continue;
+                    }
+
+                    // Robust filtering by ID for models that might have missing/null mode
+                    const lowerId = model.id.toLowerCase();
+                    if (
+                        lowerId.includes('image') ||
+                        lowerId.includes('dall-e') ||
+                        lowerId.includes('stable-diffusion') ||
+                        lowerId.includes('midjourney') ||
+                        lowerId.includes('flux') ||
+                        lowerId.includes('audio') ||
+                        lowerId.includes('video') ||
+                        lowerId.includes('text-to-speech') ||
+                        lowerId.includes('speech-to-text') ||
+                        lowerId.includes('whisper') ||
+                        lowerId.includes('tts') ||
+                        lowerId.includes('stt')
+                    ) {
+                        // Double check it's not a chat model with "image" in the name (unlikely for "chat" models, but possible for multi-modal)
+                        // But usually "image" in ID means image generation model in this API.
+                        // Exception: "vision" models are chat models. "image" usually means generation.
+                        // Let's be safe.
+                        if (!lowerId.includes('vision')) {
+                            continue;
+                        }
+                    }
+                    // Explicitly allow 'chat', 'responses', and potentially null/undefined (legacy models)
+                    // If we want to be strict but allow null:
+                    // if (model.mode && model.mode !== 'chat' && model.mode !== 'responses') continue;
+                    // But better to blacklist the wrong ones.
+
+                    // Filter by provider if selected
+                    // OpenAI models often have owned_by 'openai' or 'system'
+                    if (provider && model.owned_by !== provider) {
+                        continue;
+                    }
+
                     if (model.id) {
                         returnData.push({
                             name: model.id,
