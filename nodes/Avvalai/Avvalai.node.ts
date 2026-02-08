@@ -58,7 +58,7 @@ export class Avvalai implements INodeType {
 		loadOptions: {
 			async getProviders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
 				const returnData: INodePropertyOptions[] = [];
-				const models = await this.helpers.requestWithAuthentication.call(this, 'avvalaiApi', {
+				const models = await this.helpers.httpRequestWithAuthentication.call(this, 'avvalaiApi', {
 					method: 'GET',
 					url: 'https://api.avalai.ir/v1/models',
 				});
@@ -68,17 +68,20 @@ export class Avvalai implements INodeType {
 				if (typeof models === 'string') {
 					try {
 						responseData = JSON.parse(models);
-					} catch (e) {
+					} catch {
 						// Ignore parse error
 					}
 				}
 
 				// Handle different response structures
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				let modelList: any[] = [];
 				if (Array.isArray(responseData)) {
 					modelList = responseData;
-				} else if (responseData && Array.isArray(responseData.data)) {
-					modelList = responseData.data;
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				} else if (responseData && Array.isArray((responseData as any).data)) {
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					modelList = (responseData as any).data;
 				}
 
 				const providers = new Set<string>();
@@ -103,18 +106,18 @@ export class Avvalai implements INodeType {
 				let resource = 'chat';
 				try {
 					resource = this.getNodeParameter('resource') as string;
-				} catch (e) {
+				} catch {
 					// Fallback
 				}
 
 				let provider = '';
 				try {
 					provider = this.getNodeParameter('provider') as string;
-				} catch (e) {
+				} catch {
 					// Fallback
 				}
 
-				const models = await this.helpers.requestWithAuthentication.call(this, 'avvalaiApi', {
+				const models = await this.helpers.httpRequestWithAuthentication.call(this, 'avvalaiApi', {
 					method: 'GET',
 					url: 'https://api.avalai.ir/v1/models',
 				});
@@ -124,17 +127,20 @@ export class Avvalai implements INodeType {
 				if (typeof models === 'string') {
 					try {
 						responseData = JSON.parse(models);
-					} catch (e) {
+					} catch {
 						// Ignore parse error
 					}
 				}
 
 				// Handle different response structures
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				let modelList: any[] = [];
 				if (Array.isArray(responseData)) {
 					modelList = responseData;
-				} else if (responseData && Array.isArray(responseData.data)) {
-					modelList = responseData.data;
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+				} else if (responseData && Array.isArray((responseData as any).data)) {
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					modelList = (responseData as any).data;
 				}
 
 				for (const model of modelList) {
@@ -187,7 +193,7 @@ export class Avvalai implements INodeType {
 						let operation = 'generations';
 						try {
 							operation = this.getNodeParameter('operation') as string;
-						} catch (e) {
+						} catch {
 							// Fallback
 						}
 

@@ -7,6 +7,7 @@ import {
     type INodePropertyOptions,
     NodeConnectionTypes,
 } from 'n8n-workflow';
+// eslint-disable-next-line @n8n/community-nodes/no-restricted-imports
 import { ChatOpenAI } from '@langchain/openai';
 
 export class AvvalaiChatModel implements INodeType {
@@ -23,9 +24,9 @@ export class AvvalaiChatModel implements INodeType {
         codex: {
             categories: ['AI'],
         },
-        // eslint-disable-next-line n8n-nodes-base/node-class-description-inputs-wrong-regular-node
+
         inputs: [],
-        // eslint-disable-next-line n8n-nodes-base/node-class-description-outputs-wrong
+
         outputs: [NodeConnectionTypes.AiLanguageModel] as unknown as INodeTypeDescription['outputs'],
         credentials: [
             {
@@ -35,17 +36,17 @@ export class AvvalaiChatModel implements INodeType {
         ],
         properties: [
             {
-                displayName: 'Provider',
+                displayName: 'Provider Name or ID',
                 name: 'provider',
                 type: 'options',
-                description: 'Filter models by provider',
+                description: 'Filter models by provider. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
                 typeOptions: {
                     loadOptionsMethod: 'getProviders',
                 },
                 default: '',
             },
             {
-                displayName: 'Model',
+                displayName: 'Model Name or ID',
                 name: 'model',
                 type: 'options',
                 description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
@@ -85,13 +86,14 @@ export class AvvalaiChatModel implements INodeType {
                 ],
             },
         ],
+        usableAsTool: true,
     };
 
     methods = {
         loadOptions: {
             async getProviders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
                 const returnData: INodePropertyOptions[] = [];
-                const models = await this.helpers.requestWithAuthentication.call(this, 'avvalaiApi', {
+                const models = await this.helpers.httpRequestWithAuthentication.call(this, 'avvalaiApi', {
                     method: 'GET',
                     url: 'https://api.avalai.ir/v1/models',
                 });
@@ -101,17 +103,20 @@ export class AvvalaiChatModel implements INodeType {
                 if (typeof models === 'string') {
                     try {
                         responseData = JSON.parse(models);
-                    } catch (e) {
+                    } catch {
                         // Ignore parse error
                     }
                 }
 
                 // Handle different response structures
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let modelList: any[] = [];
                 if (Array.isArray(responseData)) {
                     modelList = responseData;
-                } else if (responseData && Array.isArray(responseData.data)) {
-                    modelList = responseData.data;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } else if (responseData && Array.isArray((responseData as any).data)) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    modelList = (responseData as any).data;
                 }
 
                 const providers = new Set<string>();
@@ -135,11 +140,11 @@ export class AvvalaiChatModel implements INodeType {
                 let provider = '';
                 try {
                     provider = this.getNodeParameter('provider') as string;
-                } catch (e) {
+                } catch {
                     // Fallback
                 }
 
-                const models = await this.helpers.requestWithAuthentication.call(this, 'avvalaiApi', {
+                const models = await this.helpers.httpRequestWithAuthentication.call(this, 'avvalaiApi', {
                     method: 'GET',
                     url: 'https://api.avalai.ir/v1/models',
                 });
@@ -149,17 +154,20 @@ export class AvvalaiChatModel implements INodeType {
                 if (typeof models === 'string') {
                     try {
                         responseData = JSON.parse(models);
-                    } catch (e) {
+                    } catch {
                         // Ignore parse error
                     }
                 }
 
                 // Handle different response structures
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 let modelList: any[] = [];
                 if (Array.isArray(responseData)) {
                     modelList = responseData;
-                } else if (responseData && Array.isArray(responseData.data)) {
-                    modelList = responseData.data;
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                } else if (responseData && Array.isArray((responseData as any).data)) {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    modelList = (responseData as any).data;
                 }
 
                 for (const model of modelList) {

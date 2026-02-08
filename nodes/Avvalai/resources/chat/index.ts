@@ -28,10 +28,10 @@ export const chatDescription: INodeProperties[] = [
         default: 'completion',
     },
     {
-        displayName: 'Provider',
+        displayName: 'Provider Name or ID',
         name: 'provider',
         type: 'options',
-        description: 'Filter models by provider',
+        description: 'Filter models by provider. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
         typeOptions: {
             loadOptionsMethod: 'getProviders',
         },
