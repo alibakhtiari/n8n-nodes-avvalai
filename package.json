@@ -16,7 +16,7 @@
     "url": "https://github.com/alibakhtiari/n8n-nodes-avvalai.git"
   },
   "scripts": {
-    "build": "n8n-node build && copy nodes\\Avvalai\\avvalai.svg dist\\credentials\\avvalai.svg",
+    "build": "n8n-node build && cp nodes/Avvalai/avvalai.svg dist/credentials/avvalai.svg",
     "build:watch": "tsc --watch",
     "dev": "n8n-node dev",
     "lint": "n8n-node lint",
@@ -34,7 +34,8 @@
       "dist/credentials/AvvalaiApi.credentials.js"
     ],
     "nodes": [
-      "dist/nodes/Avvalai/Avvalai.node.js"
+      "dist/nodes/Avvalai/Avvalai.node.js",
+      "dist/nodes/AvvalaiChatModel/AvvalaiChatModel.node.js"
     ]
   },
   "devDependencies": {
@@ -46,5 +47,9 @@
   },
   "peerDependencies": {
     "n8n-workflow": "*"
+  },
+  "dependencies": {
+    "@langchain/core": "^1.1.19",
+    "@langchain/openai": "^1.2.5"
   }
 }

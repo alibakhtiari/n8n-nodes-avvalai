@@ -38,7 +38,7 @@ export class AvvalaiApi implements ICredentialType {
 	test: ICredentialTestRequest = {
 		request: {
 			baseURL: 'https://api.avalai.ir/v1',
-			url: '/v1/user',
+			url: '/models',
 		},
 	};
 }
