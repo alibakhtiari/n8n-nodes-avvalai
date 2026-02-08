@@ -67,6 +67,30 @@ export class AvvalaiChatModel implements INodeType {
                 default: {},
                 options: [
                     {
+                        displayName: 'Maximum Number of Tokens',
+                        name: 'maxTokens',
+                        type: 'number',
+                        default: -1,
+                        description: 'The maximum number of tokens to generate in the completion. -1 means no limit.',
+                    },
+                    {
+                        displayName: 'Search Context Size',
+                        name: 'search_context_size',
+                        type: 'options',
+                        options: [
+                            { name: 'Low', value: 'low' },
+                            { name: 'Medium', value: 'medium' },
+                            { name: 'High', value: 'high' },
+                        ],
+                        default: 'medium',
+                        displayOptions: {
+                            show: {
+                                web_search: [true],
+                            },
+                        },
+                        description: 'Controls how much context is retrieved from the web',
+                    },
+                    {
                         displayName: 'Temperature',
                         name: 'temperature',
                         type: 'number',
@@ -78,11 +102,35 @@ export class AvvalaiChatModel implements INodeType {
                         description: 'Sampling temperature to use',
                     },
                     {
-                        displayName: 'Maximum Number of Tokens',
-                        name: 'maxTokens',
-                        type: 'number',
-                        default: -1,
-                        description: 'The maximum number of tokens to generate in the completion. -1 means no limit.',
+                        displayName: 'User Location (City)',
+                        name: 'user_location_city',
+                        type: 'string',
+                        default: '',
+                        displayOptions: {
+                            show: {
+                                web_search: [true],
+                            },
+                        },
+                        description: 'City name (e.g., London)',
+                    },
+                    {
+                        displayName: 'User Location (Country)',
+                        name: 'user_location_country',
+                        type: 'string',
+                        default: '',
+                        displayOptions: {
+                            show: {
+                                web_search: [true],
+                            },
+                        },
+                        description: 'Two-letter ISO country code (e.g., US, GB)',
+                    },
+                    {
+                        displayName: 'Web Search',
+                        name: 'web_search',
+                        type: 'boolean',
+                        default: false,
+                        description: 'Whether to enable web search grounding',
                     },
                 ],
             },
@@ -232,7 +280,35 @@ export class AvvalaiChatModel implements INodeType {
         const options = this.getNodeParameter('options', itemIndex, {}) as {
             temperature?: number;
             maxTokens?: number;
+            web_search?: boolean;
+            search_context_size?: string;
+            user_location_country?: string;
+            user_location_city?: string;
         };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const modelKwargs: Record<string, any> = {};
+
+        if (options.web_search) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const searchTool: any = {
+                type: 'web_search',
+            };
+
+            if (options.search_context_size) {
+                searchTool.search_context_size = options.search_context_size;
+            }
+
+            if (options.user_location_country || options.user_location_city) {
+                searchTool.user_location = {
+                    type: 'approximate',
+                };
+                if (options.user_location_country) searchTool.user_location.country = options.user_location_country;
+                if (options.user_location_city) searchTool.user_location.city = options.user_location_city;
+            }
+
+            modelKwargs.tools = [searchTool];
+        }
 
         const model = new ChatOpenAI({
             openAIApiKey: credentials.accessToken as string,
@@ -242,6 +318,7 @@ export class AvvalaiChatModel implements INodeType {
             modelName,
             temperature: options.temperature,
             maxTokens: options.maxTokens,
+            modelKwargs,
         });
 
         return {

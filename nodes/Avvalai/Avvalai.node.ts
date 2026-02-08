@@ -7,6 +7,10 @@ import {
 } from 'n8n-workflow';
 import { chatDescription } from './resources/chat';
 import { imagesDescription } from './resources/images';
+import { audioDescription } from './resources/audio';
+import { videoDescription } from './resources/video';
+import { ocrDescription } from './resources/ocr';
+import { searchDescription } from './resources/search';
 
 // eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
 export class Avvalai implements INodeType {
@@ -39,6 +43,10 @@ export class Avvalai implements INodeType {
 				noDataExpression: true,
 				options: [
 					{
+						name: 'Audio',
+						value: 'audio',
+					},
+					{
 						name: 'Chat',
 						value: 'chat',
 					},
@@ -46,11 +54,27 @@ export class Avvalai implements INodeType {
 						name: 'Image',
 						value: 'images',
 					},
+					{
+						name: 'OCR',
+						value: 'ocr',
+					},
+					{
+						name: 'Search',
+						value: 'search',
+					},
+					{
+						name: 'Video',
+						value: 'video',
+					},
 				],
 				default: 'chat',
 			},
 			...chatDescription,
 			...imagesDescription,
+			...audioDescription,
+			...videoDescription,
+			...ocrDescription,
+			...searchDescription,
 		],
 	};
 
@@ -147,26 +171,9 @@ export class Avvalai implements INodeType {
 					// Filter based on resource
 					if (resource === 'chat') {
 						if (model.mode !== 'chat' && model.mode !== 'responses') {
-							// Check if it's missing mode but has chat-like ID?
-							// Logic in ChatModel is "exclude audio/image", here it's "include chat/responses".
-							// The user complained that Chat resource causes issues too.
-							// Let's adopt the exclusion logic here too for consistency, OR strict inclusion.
-							// Currently strict inclusion: mode MUST be chat or responses.
-							// The user said "works now but it has a chat too , it loads image models still".
-							// This implies strict inclusion FAILED to exclude them.
-							// So they MUST have mode='chat' or 'responses' OR undefined and passing through?
-							// Wait, earlier I saw "mode": "image_generation".
-							// If strict inclusion is active, how did "image_generation" pass `!== 'chat'`?
-							// It shouldn't pass.
-							// Unless model.mode is undefined? then `undefined !== 'chat'` is TRUE.
-							// So we must check if mode exists?
 							if (model.mode && (model.mode === 'chat' || model.mode === 'responses')) {
 								// OK
 							} else {
-								// Skip if mode is present and not chat
-								// But what if mode is missing?
-								// If mode is missing, we should probably exclude it unless ID looks like a chat model?
-								// Or checking ID for "image"?
 								const lowerId = model.id.toLowerCase();
 								if (
 									lowerId.includes('image') ||
@@ -176,7 +183,9 @@ export class Avvalai implements INodeType {
 									lowerId.includes('flux') ||
 									lowerId.includes('audio') ||
 									lowerId.includes('video') ||
-									lowerId.includes('embed')
+									lowerId.includes('embed') ||
+									lowerId.includes('tts') ||
+									lowerId.includes('ocr')
 								) {
 									continue;
 								}
@@ -218,6 +227,27 @@ export class Avvalai implements INodeType {
 						if (!isImage) {
 							continue;
 						}
+					} else if (resource === 'audio') {
+						// Filter for TTS models
+						if (model.id.includes('tts') || (model.mode && model.mode === 'text_to_speech')) {
+							// OK
+						} else {
+							continue;
+						}
+					} else if (resource === 'video') {
+						// Filter for Video models
+						if (model.id.includes('sora') || model.id.includes('veo') || (model.mode && model.mode === 'video_generation')) {
+							// OK
+						} else {
+							continue;
+						}
+					} else if (resource === 'ocr') {
+						// Filter for OCR models
+						if (model.id.includes('ocr') || (model.mode && model.mode === 'ocr')) {
+							// OK
+						} else {
+							continue;
+						}
 					}
 
 					if (model.id) {
@@ -233,3 +263,4 @@ export class Avvalai implements INodeType {
 		},
 	};
 }
+
