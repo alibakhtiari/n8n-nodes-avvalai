@@ -8,6 +8,7 @@ import {
 import { chatDescription } from './resources/chat';
 import { imagesDescription } from './resources/images';
 
+// eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
 export class Avvalai implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Avvalai',
@@ -20,7 +21,6 @@ export class Avvalai implements INodeType {
 		defaults: {
 			name: 'Avvalai',
 		},
-		usableAsTool: true,
 		inputs: [NodeConnectionTypes.Main],
 		outputs: [NodeConnectionTypes.Main],
 		credentials: [{ name: 'avvalaiApi', required: true }],
@@ -175,10 +175,16 @@ export class Avvalai implements INodeType {
 									lowerId.includes('midjourney') ||
 									lowerId.includes('flux') ||
 									lowerId.includes('audio') ||
-									lowerId.includes('video')
+									lowerId.includes('video') ||
+									lowerId.includes('embed')
 								) {
 									continue;
 								}
+							}
+
+							// Explicitly exclude embedding mode if present
+							if (model.mode === 'embedding') {
+								continue;
 							}
 						}
 

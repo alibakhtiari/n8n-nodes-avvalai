@@ -10,6 +10,7 @@ import {
 // eslint-disable-next-line @n8n/community-nodes/no-restricted-imports
 import { ChatOpenAI } from '@langchain/openai';
 
+// eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
 export class AvvalaiChatModel implements INodeType {
     description: INodeTypeDescription = {
         displayName: 'Avvalai Chat Model',
@@ -86,7 +87,6 @@ export class AvvalaiChatModel implements INodeType {
                 ],
             },
         ],
-        usableAsTool: true,
     };
 
     methods = {
@@ -173,7 +173,7 @@ export class AvvalaiChatModel implements INodeType {
                 for (const model of modelList) {
 
                     // Filter out known non-chat models
-                    if (model.mode === 'image' || model.mode === 'image_generation' || model.mode === 'audio' || model.mode === 'moderation' || model.mode === 'video_generation') {
+                    if (model.mode === 'image' || model.mode === 'image_generation' || model.mode === 'audio' || model.mode === 'moderation' || model.mode === 'video_generation' || model.mode === 'embedding') {
                         continue;
                     }
 
@@ -191,7 +191,8 @@ export class AvvalaiChatModel implements INodeType {
                         lowerId.includes('speech-to-text') ||
                         lowerId.includes('whisper') ||
                         lowerId.includes('tts') ||
-                        lowerId.includes('stt')
+                        lowerId.includes('stt') ||
+                        lowerId.includes('embed')
                     ) {
                         // Double check it's not a chat model with "image" in the name (unlikely for "chat" models, but possible for multi-modal)
                         // But usually "image" in ID means image generation model in this API.

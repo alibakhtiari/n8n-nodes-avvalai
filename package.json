@@ -35,7 +35,8 @@
     ],
     "nodes": [
       "dist/nodes/Avvalai/Avvalai.node.js",
-      "dist/nodes/AvvalaiChatModel/AvvalaiChatModel.node.js"
+      "dist/nodes/AvvalaiChatModel/AvvalaiChatModel.node.js",
+      "dist/nodes/AvvalaiEmbeddingModel/AvvalaiEmbeddingModel.node.js"
     ]
   },
   "devDependencies": {
