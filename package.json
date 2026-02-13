@@ -36,21 +36,19 @@
     "nodes": [
       "dist/nodes/Avvalai/Avvalai.node.js",
       "dist/nodes/AvvalaiChatModel/AvvalaiChatModel.node.js",
-      "dist/nodes/AvvalaiEmbeddingModel/AvvalaiEmbeddingModel.node.js"
+      "dist/nodes/AvvalaiEmbeddingModel/AvvalaiEmbeddingModel.node.js",
+      "dist/nodes/AvvalaiSearch/AvvalaiSearch.node.js",
+      "dist/nodes/AvvalaiOcr/AvvalaiOcr.node.js"
     ]
   },
   "devDependencies": {
     "@n8n/node-cli": "*",
     "eslint": "9.32.0",
-    "prettier": "3.6.2",
-    "release-it": "^19.0.4",
-    "typescript": "5.9.2"
+    "prettier": "^3.6.2",
+    "release-it": "^19.2.4",
+    "typescript": "^5.9.2"
   },
   "peerDependencies": {
     "n8n-workflow": "*"
-  },
-  "dependencies": {
-    "@langchain/core": "^1.1.19",
-    "@langchain/openai": "^1.2.5"
   }
 }
