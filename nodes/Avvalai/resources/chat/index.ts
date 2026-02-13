@@ -202,6 +202,27 @@ export const chatDescription: INodeProperties[] = [
                 description: 'If specified, our system will make a best effort to sample deterministically, such that repeated requests with the same seed and parameters should return the same result',
             },
             {
+                displayName: 'Service Tier',
+                name: 'service_tier',
+                type: 'options',
+                options: [
+                    {
+                        name: 'Auto',
+                        value: 'auto',
+                    },
+                    {
+                        name: 'Default',
+                        value: 'default',
+                    },
+                    {
+                        name: 'Flex',
+                        value: 'flex',
+                    },
+                ],
+                default: 'auto',
+                description: 'The processing tier to use for this request. "flex" offers lower pricing with longer processing times.',
+            },
+            {
                 displayName: 'Stop',
                 name: 'stop',
                 type: 'string',
@@ -229,6 +250,13 @@ export const chatDescription: INodeProperties[] = [
                 },
                 default: 1,
                 description: 'An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass',
+            },
+            {
+                displayName: 'User',
+                name: 'user',
+                type: 'string',
+                default: '',
+                description: 'A unique identifier representing your end-user, which can help monitor and detect abuse',
             },
         ],
         routing: {

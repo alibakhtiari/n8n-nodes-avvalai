@@ -84,11 +84,32 @@ export const ocrDescription: INodeProperties[] = [
         },
         options: [
             {
+                displayName: 'Image Limit',
+                name: 'image_limit',
+                type: 'number',
+                default: 0,
+                description: 'Maximum number of images to extract per page. 0 means no limit.',
+            },
+            {
+                displayName: 'Image Min Size',
+                name: 'image_min_size',
+                type: 'number',
+                default: 0,
+                description: 'Minimum image size in pixels to extract. Images smaller than this are skipped.',
+            },
+            {
                 displayName: 'Includes Image Base64',
                 name: 'include_image_base64',
                 type: 'boolean',
                 default: false,
                 description: 'Whether to include extracted images as base64 strings',
+            },
+            {
+                displayName: 'Pages',
+                name: 'pages',
+                type: 'string',
+                default: '',
+                description: 'Access specific pages (e.g., "0, 1, 5")',
             },
             {
                 displayName: 'Table Format',
@@ -101,23 +122,11 @@ export const ocrDescription: INodeProperties[] = [
                 default: 'markdown',
                 description: 'Format for extracted tables',
             },
-            {
-                displayName: 'Pages',
-                name: 'pages',
-                type: 'string',
-                default: '',
-                description: 'Access specific pages (e.g., "0, 1, 5")',
-            },
         ],
         routing: {
             send: {
                 type: 'body',
-                property: 'additionalFields', // Will be merged? No, I need to merge manually or map properties.
-                // n8n collections don't auto-merge into root unless we use map or preSend.
-                // I'll use preSend or flatten logic.
-                // Actually, simpler to just map properties one by one in routing if possible?
-                // But "additionalFields" is a collection.
-                // I'll use a preSend to merge additionalFields into body.
+                property: 'additionalFields',
                 preSend: [
                     async function (
                         this: IExecuteSingleFunctions,
@@ -128,10 +137,12 @@ export const ocrDescription: INodeProperties[] = [
 
                         Object.assign(body, additionalFields);
 
-                        // Handle 'pages' string to array
+                        // Convert comma-separated pages string to number array
                         if (body.pages && typeof body.pages === 'string') {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            body.pages = (body.pages as string).split(',').map((p: string) => parseInt(p.trim(), 10)).filter((n: number) => !isNaN(n));
+                            body.pages = (body.pages as string)
+                                .split(',')
+                                .map((p: string) => parseInt(p.trim(), 10))
+                                .filter((n: number) => !isNaN(n));
                         }
 
                         return requestOptions;

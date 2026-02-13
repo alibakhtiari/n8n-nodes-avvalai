@@ -11,8 +11,14 @@ import { audioDescription } from './resources/audio';
 import { videoDescription } from './resources/video';
 import { ocrDescription } from './resources/ocr';
 import { searchDescription } from './resources/search';
+import {
+	AVVALAI_BASE_URL,
+	fetchModelList,
+	isNonChatMode,
+	looksLikeNonChatId,
+	loadProviderOptions,
+} from './helpers';
 
-// eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
 export class Avvalai implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'Avvalai',
@@ -20,6 +26,7 @@ export class Avvalai implements INodeType {
 		icon: 'file:avvalai.svg',
 		group: ['transform'],
 		version: 1,
+		usableAsTool: true,
 		subtitle: '={{$parameter["operation"] + ": " + $parameter["resource"]}}',
 		description: 'Interact with the Avvalai API',
 		defaults: {
@@ -29,7 +36,7 @@ export class Avvalai implements INodeType {
 		outputs: [NodeConnectionTypes.Main],
 		credentials: [{ name: 'avvalaiApi', required: true }],
 		requestDefaults: {
-			baseURL: 'https://api.avalai.ir/v1',
+			baseURL: AVVALAI_BASE_URL,
 			headers: {
 				Accept: 'application/json',
 				'Content-Type': 'application/json',
@@ -42,30 +49,12 @@ export class Avvalai implements INodeType {
 				type: 'options',
 				noDataExpression: true,
 				options: [
-					{
-						name: 'Audio',
-						value: 'audio',
-					},
-					{
-						name: 'Chat',
-						value: 'chat',
-					},
-					{
-						name: 'Image',
-						value: 'images',
-					},
-					{
-						name: 'OCR',
-						value: 'ocr',
-					},
-					{
-						name: 'Search',
-						value: 'search',
-					},
-					{
-						name: 'Video',
-						value: 'video',
-					},
+					{ name: 'Audio', value: 'audio' },
+					{ name: 'Chat', value: 'chat' },
+					{ name: 'Image', value: 'images' },
+					{ name: 'OCR', value: 'ocr' },
+					{ name: 'Search', value: 'search' },
+					{ name: 'Video', value: 'video' },
 				],
 				default: 'chat',
 			},
@@ -81,52 +70,9 @@ export class Avvalai implements INodeType {
 	methods = {
 		loadOptions: {
 			async getProviders(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const returnData: INodePropertyOptions[] = [];
-				const models = await this.helpers.httpRequestWithAuthentication.call(this, 'avvalaiApi', {
-					method: 'GET',
-					url: 'https://api.avalai.ir/v1/models',
-				});
-
-				// Handle string response
-				let responseData = models;
-				if (typeof models === 'string') {
-					try {
-						responseData = JSON.parse(models);
-					} catch {
-						// Ignore parse error
-					}
-				}
-
-				// Handle different response structures
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				let modelList: any[] = [];
-				if (Array.isArray(responseData)) {
-					modelList = responseData;
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				} else if (responseData && Array.isArray((responseData as any).data)) {
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					modelList = (responseData as any).data;
-				}
-
-				const providers = new Set<string>();
-				for (const model of modelList) {
-					if (model.owned_by) {
-						providers.add(model.owned_by);
-					}
-				}
-
-				for (const provider of providers) {
-					returnData.push({
-						name: provider,
-						value: provider,
-					});
-				}
-
-				return returnData;
+				return loadProviderOptions(this);
 			},
 			async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-				const returnData: INodePropertyOptions[] = [];
-
 				let resource = 'chat';
 				try {
 					resource = this.getNodeParameter('resource') as string;
@@ -141,69 +87,21 @@ export class Avvalai implements INodeType {
 					// Fallback
 				}
 
-				const models = await this.helpers.httpRequestWithAuthentication.call(this, 'avvalaiApi', {
-					method: 'GET',
-					url: 'https://api.avalai.ir/v1/models',
-				});
-
-				// Handle string response
-				let responseData = models;
-				if (typeof models === 'string') {
-					try {
-						responseData = JSON.parse(models);
-					} catch {
-						// Ignore parse error
-					}
-				}
-
-				// Handle different response structures
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				let modelList: any[] = [];
-				if (Array.isArray(responseData)) {
-					modelList = responseData;
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				} else if (responseData && Array.isArray((responseData as any).data)) {
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					modelList = (responseData as any).data;
-				}
+				const modelList = await fetchModelList(this);
+				const returnData: INodePropertyOptions[] = [];
 
 				for (const model of modelList) {
-					// Filter based on resource
 					if (resource === 'chat') {
+						// Skip models that are definitively non-chat by mode
+						if (isNonChatMode(model)) continue;
+
+						// For models without an explicit chat/responses mode, use ID heuristics
 						if (model.mode !== 'chat' && model.mode !== 'responses') {
-							if (model.mode && (model.mode === 'chat' || model.mode === 'responses')) {
-								// OK
-							} else {
-								const lowerId = model.id.toLowerCase();
-								if (
-									lowerId.includes('image') ||
-									lowerId.includes('dall-e') ||
-									lowerId.includes('stable-diffusion') ||
-									lowerId.includes('midjourney') ||
-									lowerId.includes('flux') ||
-									lowerId.includes('audio') ||
-									lowerId.includes('video') ||
-									lowerId.includes('embed') ||
-									lowerId.includes('tts') ||
-									lowerId.includes('ocr')
-								) {
-									continue;
-								}
-							}
-
-							// Explicitly exclude embedding mode if present
-							if (model.mode === 'embedding') {
-								continue;
-							}
+							if (looksLikeNonChatId(model.id || '')) continue;
 						}
 
-						// Filter by provider if selected (only for chat resource for now as we only added the field to chat)
-						// But technically getModels runs for both.
-						// If resource is chat, we check provider.
-						if (provider && model.owned_by !== provider) {
-							continue;
-						}
-
+						// Filter by provider if selected
+						if (provider && model.owned_by !== provider) continue;
 					} else if (resource === 'images') {
 						let operation = 'generations';
 						try {
@@ -212,49 +110,36 @@ export class Avvalai implements INodeType {
 							// Fallback
 						}
 
+						const isImage =
+							operation === 'edits'
+								? model.id &&
+								(model.id.includes('dall-e-2') || model.mode === 'image_edit')
+								: (model.id && model.id.includes('dall-e')) ||
+								model.mode === 'image' ||
+								model.mode === 'image_generation';
 
-						// Filter for image models
-						let isImage = false;
-						if (operation === 'edits') {
-							// Strict filter for edits
-							isImage = (model.id && (model.id.includes('dall-e-2') || model.mode === 'image_edit'));
-						} else {
-							// Default / Generations
-							// Include anything that looks like an image model
-							isImage = (model.id && model.id.includes('dall-e')) || model.mode === 'image' || model.mode === 'image_generation';
-						}
-
-						if (!isImage) {
-							continue;
-						}
+						if (!isImage) continue;
 					} else if (resource === 'audio') {
-						// Filter for TTS models
-						if (model.id.includes('tts') || (model.mode && model.mode === 'text_to_speech')) {
-							// OK
-						} else {
-							continue;
-						}
+						const isAudio =
+							(model.id && model.id.includes('tts')) ||
+							model.mode === 'text_to_speech';
+						if (!isAudio) continue;
 					} else if (resource === 'video') {
-						// Filter for Video models
-						if (model.id.includes('sora') || model.id.includes('veo') || (model.mode && model.mode === 'video_generation')) {
-							// OK
-						} else {
-							continue;
-						}
+						const isVideo =
+							(model.id && (model.id.includes('sora') || model.id.includes('veo'))) ||
+							model.mode === 'video_generation';
+						if (!isVideo) continue;
 					} else if (resource === 'ocr') {
-						// Filter for OCR models
-						if (model.id.includes('ocr') || (model.mode && model.mode === 'ocr')) {
-							// OK
-						} else {
-							continue;
-						}
+						const isOcr =
+							(model.id && model.id.includes('ocr')) || model.mode === 'ocr';
+						if (!isOcr) continue;
+					} else if (resource === 'search') {
+						// Search uses a dedicated tool selector, not model selection
+						continue;
 					}
 
 					if (model.id) {
-						returnData.push({
-							name: model.id,
-							value: model.id,
-						});
+						returnData.push({ name: model.id, value: model.id });
 					}
 				}
 
@@ -263,4 +148,3 @@ export class Avvalai implements INodeType {
 		},
 	};
 }
-

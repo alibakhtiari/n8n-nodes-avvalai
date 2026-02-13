@@ -183,6 +183,13 @@ export const imagesDescription: INodeProperties[] = [
                 default: 'vivid',
                 description: 'The style of the generated images',
             },
+            {
+                displayName: 'User',
+                name: 'user',
+                type: 'string',
+                default: '',
+                description: 'A unique identifier representing your end-user, which can help monitor and detect abuse',
+            },
         ],
         routing: {
             send: {

@@ -184,6 +184,52 @@ export const videoDescription: INodeProperties[] = [
         },
     },
     {
+        displayName: 'Number of Variants',
+        name: 'n_variants',
+        type: 'number',
+        typeOptions: {
+            minValue: 1,
+            maxValue: 2,
+        },
+        default: 1,
+        displayOptions: {
+            show: {
+                resource: ['video'],
+                operation: ['create'],
+            },
+        },
+        description: 'Number of video variants to generate (1-2)',
+        routing: {
+            send: {
+                type: 'body',
+                property: 'n_variants',
+            },
+        },
+    },
+    {
+        displayName: 'Style',
+        name: 'style',
+        type: 'options',
+        options: [
+            { name: 'Natural', value: 'natural' },
+            { name: 'Vivid', value: 'vivid' },
+        ],
+        default: 'natural',
+        displayOptions: {
+            show: {
+                resource: ['video'],
+                operation: ['create'],
+            },
+        },
+        description: 'The visual style of the generated video',
+        routing: {
+            send: {
+                type: 'body',
+                property: 'style',
+            },
+        },
+    },
+    {
         displayName: 'Input Reference Image',
         name: 'input_reference',
         type: 'string',
