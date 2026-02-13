@@ -43,27 +43,35 @@ const NON_CHAT_MODES = new Set([
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchModelList(context: ILoadOptionsFunctions): Promise<any[]> {
-    const raw = await context.helpers.httpRequestWithAuthentication.call(context, 'avvalaiApi', {
-        method: 'GET',
-        url: `${AVVALAI_BASE_URL}/models`,
-    });
+    try {
+        const raw = await context.helpers.httpRequestWithAuthentication.call(context, 'avvalaiApi', {
+            method: 'GET',
+            url: `${AVVALAI_BASE_URL}/models`,
+        });
 
-    let parsed = raw;
-    if (typeof raw === 'string') {
-        try {
-            parsed = JSON.parse(raw);
-        } catch {
-            return [];
+        let parsed = raw;
+        if (typeof raw === 'string') {
+            try {
+                parsed = JSON.parse(raw);
+            } catch {
+                return [];
+            }
         }
-    }
 
-    if (Array.isArray(parsed)) {
-        return parsed;
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (parsed && Array.isArray((parsed as any).data)) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (parsed as any).data;
+        if (Array.isArray(parsed)) {
+            return parsed;
+        }
+
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            const data = (parsed as Record<string, unknown>).data;
+            if (Array.isArray(data)) {
+                return data;
+            }
+        }
+    } catch {
+        // Return empty array instead of throwing to prevent n8n UI "Error fetching options" red box
+        // This is crucial for n8n community nodes when credentials aren't set yet.
+        return [];
     }
 
     return [];

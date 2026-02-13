@@ -93,7 +93,7 @@ export class AvvalaiEmbeddingModel implements INodeType {
                 return models
                     .filter((m) => {
                         if (m.mode === 'embedding') return true;
-                        if (looksLikeNonChatId(m.id) && !isNonChatMode(m.mode)) {
+                        if (looksLikeNonChatId(m.id) && !isNonChatMode(m)) {
                             return m.id.toLowerCase().includes('embed');
                         }
                         return false;

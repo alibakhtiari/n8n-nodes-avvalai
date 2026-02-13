@@ -145,7 +145,7 @@ export class AvvalaiChatModel implements INodeType {
 
                 return models
                     .filter((m) => {
-                        if (isNonChatMode(m.mode)) return false;
+                        if (isNonChatMode(m)) return false;
                         if (looksLikeNonChatId(m.id)) return false;
                         return true;
                     })
