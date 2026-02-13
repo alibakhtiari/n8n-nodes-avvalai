@@ -1,135 +1,137 @@
 import {
+    type ILoadOptionsFunctions,
+    type INodePropertyOptions,
     type INodeType,
     type INodeTypeDescription,
     type ISupplyDataFunctions,
     type SupplyData,
-    type ILoadOptionsFunctions,
-    type INodePropertyOptions,
     NodeConnectionTypes,
 } from 'n8n-workflow';
-// eslint-disable-next-line @n8n/community-nodes/no-restricted-imports
-import { OpenAIEmbeddings } from '@langchain/openai';
+
+import {
+    AVVALAI_BASE_URL,
+    fetchModelList,
+    isNonChatMode,
+    looksLikeNonChatId,
+} from '../Avvalai/helpers';
 
 // eslint-disable-next-line @n8n/community-nodes/node-usable-as-tool
 export class AvvalaiEmbeddingModel implements INodeType {
     description: INodeTypeDescription = {
         displayName: 'Avvalai Embedding Model',
         name: 'avvalaiEmbeddingModel',
-        icon: 'file:avvalai.svg',
+        icon: 'file:../Avvalai/avvalai.svg',
         group: ['transform'],
         version: 1,
-        description: 'Embedding model from Avvalai',
+        subtitle: '={{$parameter.modelId}}',
+        description: 'Use Avvalai embedding models in your AI workflows',
         defaults: {
             name: 'Avvalai Embedding Model',
         },
         codex: {
             categories: ['AI'],
+            subcategories: {
+                AI: ['Embeddings'],
+            },
+            resources: {
+                primaryDocumentation: [
+                    {
+                        url: 'https://docs.avalai.ir/en/api-reference/embeddings',
+                    },
+                ],
+            },
         },
-        inputs: [],
-        outputs: [NodeConnectionTypes.AiEmbedding] as unknown as INodeTypeDescription['outputs'],
         credentials: [
             {
                 name: 'avvalaiApi',
                 required: true,
             },
         ],
+        inputs: [],
+        outputs: [NodeConnectionTypes.AiEmbedding],
+        outputNames: ['Embedding'],
         properties: [
             {
                 displayName: 'Model Name or ID',
-                name: 'model',
+                name: 'modelId',
                 type: 'options',
-                description: 'Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>',
+                default: '',
+                required: true,
+                description:
+                    'The embedding model to use. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
                 typeOptions: {
                     loadOptionsMethod: 'getModels',
                 },
-                default: '',
-                required: true,
             },
             {
-                displayName: 'Strip Newlines',
-                name: 'stripNewLines',
-                type: 'boolean',
-                default: false,
-                description: 'Whether to strip newlines from the input text. This is recommended by some providers.',
-            },
-            {
-                displayName: 'Batch Size',
-                name: 'batchSize',
-                type: 'number',
-                default: 512,
-                description: 'The number of documents to embed in a single batch',
+                displayName: 'Options',
+                name: 'options',
+                type: 'collection',
+                placeholder: 'Add Option',
+                default: {},
+                options: [
+                    {
+                        displayName: 'Dimensions',
+                        name: 'dimensions',
+                        type: 'number',
+                        default: 0,
+                        description:
+                            'The number of dimensions for the output embeddings. 0 uses model default. Only supported by some models.',
+                    },
+                ],
             },
         ],
     };
 
     methods = {
         loadOptions: {
-            async getModels(this: ILoadOptionsFunctions): Promise<INodePropertyOptions[]> {
-                const returnData: INodePropertyOptions[] = [];
-                const models = await this.helpers.httpRequestWithAuthentication.call(this, 'avvalaiApi', {
-                    method: 'GET',
-                    url: 'https://api.avalai.ir/v1/models',
-                });
+            async getModels(
+                this: ILoadOptionsFunctions,
+            ): Promise<INodePropertyOptions[]> {
+                const models = await fetchModelList(this);
 
-                // Handle string response
-                let responseData = models;
-                if (typeof models === 'string') {
-                    try {
-                        responseData = JSON.parse(models);
-                    } catch {
-                        // Ignore parse error
-                    }
-                }
-
-                // Handle different response structures
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                let modelList: any[] = [];
-                if (Array.isArray(responseData)) {
-                    modelList = responseData;
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                } else if (responseData && Array.isArray((responseData as any).data)) {
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    modelList = (responseData as any).data;
-                }
-
-                for (const model of modelList) {
-                    // Filter for embedding models
-                    // API returns "mode": "embedding" for embedding models
-                    const isEmbedding = model.mode === 'embedding' || (model.id && model.id.toLowerCase().includes('embed'));
-
-                    if (isEmbedding) {
-                        if (model.id) {
-                            returnData.push({
-                                name: model.id,
-                                value: model.id,
-                            });
+                return models
+                    .filter((m) => {
+                        if (m.mode === 'embedding') return true;
+                        if (looksLikeNonChatId(m.id) && !isNonChatMode(m.mode)) {
+                            return m.id.toLowerCase().includes('embed');
                         }
-                    }
-                }
-
-                return returnData;
+                        return false;
+                    })
+                    .map((m) => ({
+                        name: m.id,
+                        value: m.id,
+                    }));
             },
         },
     };
 
-    async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
+    async supplyData(
+        this: ISupplyDataFunctions,
+        itemIndex: number,
+    ): Promise<SupplyData> {
         const credentials = await this.getCredentials('avvalaiApi');
-        const modelName = this.getNodeParameter('model', itemIndex) as string;
-        const stripNewLines = this.getNodeParameter('stripNewLines', itemIndex) as boolean;
-        const batchSize = this.getNodeParameter('batchSize', itemIndex) as number;
+        const modelId = this.getNodeParameter('modelId', itemIndex) as string;
+        const options = this.getNodeParameter('options', itemIndex, {}) as {
+            dimensions?: number;
+        };
 
-        const model = new OpenAIEmbeddings({
+        // Dynamic require — @langchain/openai is provided by n8n at runtime
+        const langchainOpenai = eval('require')("@langchain/openai") as Record<string, unknown>;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const embeddings = new (langchainOpenai.OpenAIEmbeddings as any)({
             openAIApiKey: credentials.accessToken as string,
+            modelName: modelId,
+            ...(options.dimensions && options.dimensions > 0
+                ? { dimensions: options.dimensions }
+                : {}),
             configuration: {
-                baseURL: 'https://api.avalai.ir/v1',
+                baseURL: AVVALAI_BASE_URL,
             },
-            modelName,
-            stripNewLines,
-            batchSize,
         });
 
         return {
-            response: model,
+            response: embeddings,
         };
     }
 }
