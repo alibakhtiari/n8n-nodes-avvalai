@@ -9,14 +9,14 @@
   ],
   "author": {
     "name": "Alib",
-    "email": "alib@example.com"
+    "email": "ali.bakhtiarii@gmail.com"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/alibakhtiari/n8n-nodes-avvalai.git"
   },
   "scripts": {
-    "build": "n8n-node build && cp nodes/Avvalai/avvalai.svg dist/credentials/avvalai.svg",
+    "build": "n8n-node build && shx mkdir -p dist/credentials && shx cp nodes/Avvalai/avvalai.svg dist/credentials/avvalai.svg",
     "build:watch": "tsc --watch",
     "dev": "n8n-node dev",
     "lint": "n8n-node lint",
@@ -46,6 +46,7 @@
     "eslint": "9.32.0",
     "prettier": "^3.6.2",
     "release-it": "^19.2.4",
+    "shx": "^0.4.0",
     "typescript": "^5.9.2"
   },
   "peerDependencies": {
