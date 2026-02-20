@@ -3,7 +3,7 @@
   "version": "0.1.1",
   "description": "N8N node for AvalAI",
   "license": "MIT",
-  "homepage": "",
+  "homepage": "https://github.com/alibakhtiari/n8n-nodes-avvalai",
   "keywords": [
     "n8n-community-node-package"
   ],
@@ -16,7 +16,7 @@
     "url": "https://github.com/alibakhtiari/n8n-nodes-avvalai.git"
   },
   "scripts": {
-    "build": "n8n-node build && shx mkdir -p dist/credentials && shx cp nodes/Avvalai/avvalai.svg dist/credentials/avvalai.svg",
+    "build": "n8n-node build",
     "build:watch": "tsc --watch",
     "dev": "n8n-node dev",
     "lint": "n8n-node lint",
@@ -44,10 +44,9 @@
   "devDependencies": {
     "@n8n/node-cli": "*",
     "eslint": "9.32.0",
-    "prettier": "^3.6.2",
+    "prettier": "^3.8.1",
     "release-it": "^19.2.4",
-    "shx": "^0.4.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   },
   "peerDependencies": {
     "n8n-workflow": "*"
