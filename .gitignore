@@ -2,6 +2,7 @@
 /node_modules
 /en
 .env
+.npmrc
 *.log
 .vscode/
 .idea/

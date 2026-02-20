@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-avvalai",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "N8N node for AvalAI",
   "license": "MIT",
   "homepage": "https://github.com/alibakhtiari/n8n-nodes-avvalai",
