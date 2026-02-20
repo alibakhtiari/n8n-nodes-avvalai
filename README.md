@@ -1,10 +1,8 @@
 # n8n-nodes-avvalai
 
-This is an n8n community node. It lets you use _app/service name_ in your n8n workflows.
+This is an n8n community node for [AvalAI](https://avalai.ir), the first and most advanced Persian AI platform.
 
-_App/service name_ is _one or two sentences describing the service this node integrates with_.
-
-[n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
+AvalAI provides a comprehensive API platform that integrates over 100 cutting-edge AI models, including GPT-4o, Claude 3.7 Sonnet, Gemini 2.0, Llama 3.1, and many more, with zero-markup pricing.
 
 [Installation](#installation)
 [Operations](#operations)
@@ -12,7 +10,6 @@ _App/service name_ is _one or two sentences describing the service this node int
 [Compatibility](#compatibility)
 [Usage](#usage)
 [Resources](#resources)
-[Version history](#version-history)
 
 ## Installation
 
@@ -20,27 +17,43 @@ Follow the [installation guide](https://docs.n8n.io/integrations/community-nodes
 
 ## Operations
 
-_List the operations supported by your node._
+This node supports the following AvalAI resources and operations:
+
+### Chat
+- **Models**: Access to 100+ models (OpenAI, Anthropic, Google, Llama, etc.)
+- **Modes**: Support for standard Chat and specialized response modes.
+
+### Image
+- **Generations**: DALL-E 3, Stable Diffusion, Nano Banana, etc.
+- **Edits**: Image editing and background removal.
+
+### Audio & Video
+- **Text-to-Speech**: High-quality audio generation.
+- **Video Generation**: Support for emerging video models like Sora and Veo.
+
+### OCR
+- **Extraction**: Advanced optical character recognition for documents and images.
+
+### Search
+- **Web Search**: Real-time web search capabilities for AI models.
 
 ## Credentials
 
-_If users need to authenticate with the app/service, provide details here. You should include prerequisites (such as signing up with the service), available authentication methods, and how to set them up._
+1. Sign up for an account at [AvalAI](https://avalai.ir).
+2. Navigate to the [Developer Panel](https://api.avalai.ir) to generate an API Key.
+3. In n8n, create a new `Avvalai API` credential and paste your access token.
 
 ## Compatibility
 
-_State the minimum n8n version, as well as which versions you test against. You can also include any known version incompatibility issues._
-
-## Usage
-
-_This is an optional section. Use it to help users with any difficult or confusing aspects of the node._
-
-_By the time users are looking for community nodes, they probably already know n8n basics. But if you expect new users, you can link to the [Try it out](https://docs.n8n.io/try-it-out/) documentation to help them get started._
+- Tested on n8n version 1.0+
+- Requires Node.js 18+
 
 ## Resources
 
+* [AvalAI Official Website](https://avalai.ir)
+* [AvalAI API Documentation](https://docs.avalai.ir)
 * [n8n community nodes documentation](https://docs.n8n.io/integrations/#community-nodes)
-* _Link to app/service documentation._
 
-## Version history
+---
 
-_This is another optional section. If your node has multiple versions, include a short description of available versions and what changed, as well as any compatibility impact._
+Developed and maintained by [WebABC](https://webabc.ir)
