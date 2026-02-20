@@ -2,3 +2,8 @@
 /node_modules
 /en
 .env
+*.log
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
